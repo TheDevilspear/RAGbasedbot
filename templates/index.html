@@ -1,19 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jamba Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1400px; /* Increased max-width for 3 columns */
+            width: 95%; /* Adjusted width */
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 90vh; /* Increased height */
+            display: flex;
+            flex-direction: column; /* Changed to column for header on top */
+        }
+
+        /* --- New Layout Specific Styles --- */
+        .app-header {
+            padding: 15px 30px;
+            background: #343a40;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2e32;
+            border-top-left-radius: 20px; /* Match container border radius */
+            border-top-right-radius: 20px; /* Match container border radius */
+        }
+
+        .app-header h2 {
+            margin: 0;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-user-info {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .main-app-content {
+            flex: 1; /* Allows it to take remaining height */
+            display: grid; /* Use CSS Grid for 3 columns */
+            grid-template-columns: 280px 1fr 280px; /* Left (Conversations), Middle (Chat), Right (Documents) */
+            gap: 0; /* No gap between panels */
+            height: calc(100% - 70px); /* Adjust based on header height */
+        }
+
+        .panel {
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e9ecef; /* Separator between panels */
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .panel-right { /* No border-right for the last panel */
+            border-right: none;
+        }
+
+        .chat-panel { /* Specific styles for the chat middle panel */
+            background: white; /* Chat panel has a different background */
+            border-right: 1px solid #e9ecef; /* Separator */
+            border-left: 1px solid #e9ecef; /* Separator */
+            display: flex;
+            flex-direction: column;
+            padding: 0; /* Chat content handles its own padding */
+        }
+
+        /* --- Existing Styles (adjusted for new layout) --- */
+        .sidebar-content { /* Re-used for both conversations and documents panels */
+            flex: 1;
+            overflow-y: auto;
+            padding: 0; /* Panel handles padding now */
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h3 {
+            color: #343a40;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+            display: block;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .conversations-list {
+            max-height: none; /* Let the parent panel handle overflow */
+            overflow-y: auto;
+            flex: 1; /* Occupy remaining space in its panel */
+        }
+
+        .conversation-item {
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .conversation-item:hover {
+            background: #f8f9fa;
+            border-color: #007bff;
+        }
+
+        .conversation-item.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .conversation-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .conversation-date {
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+
+        .documents-list {
+            max-height: none; /* Let the parent panel handle overflow */
+            overflow-y: auto;
+            flex: 1; /* Occupy remaining space in its panel */
+        }
+
+        .document-item {
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: white;
+            position: relative;
+        }
+
+        .document-item.active {
+            border-color: #28a745;
+            background: #f8fff8;
+        }
+
+        .document-item.processing {
+            border-color: #ffc107;
+            background: #fffbf0;
+        }
+
+        .document-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .document-status {
+            font-size: 0.8em;
+            margin-bottom: 10px;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap; /* Allow buttons to wrap if needed */
+        }
+
+        .document-actions .btn {
+            padding: 5px 10px;
+            font-size: 0.8em;
+            margin-bottom: 0;
+            width: auto;
+            flex-grow: 1; /* Allow buttons to grow */
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            border: 2px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: #007bff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.8em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0; /* Prevent input from shrinking */
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e9ecef;
+            border-radius: 25px;
+            outline: none;
+            font-size: 1em;
+        }
+
+        .chat-input input:focus {
+            border-color: #007bff;
+        }
+
+        .chat-input button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input button:hover {
+            background: #0056b3;
+        }
+
+        .chat-input button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .login-screen {
+            position: absolute; /* Position absolute to overlay the main app */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Full background for login */
+            z-index: 999; /* Ensure it's on top */
+            border-radius: 20px; /* Match container border radius */
+        }
+
+        .login-form {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%; /* Adjusted for responsiveness */
+        }
+
+        .login-form h2 {
+            margin-bottom: 30px;
+            color: #343a40;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        .login-form input:focus {
+            border-color: #007bff;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex; /* Use flex to center modal content */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 350px; /* Slightly wider */
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-content input {
+            width: calc(100% - 20px); /* Adjust for padding */
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .file-upload {
+            margin-bottom: 20px;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload label {
+            display: block;
+            padding: 10px 15px;
+            background: #28a745;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload label:hover {
+            background: #1e7e34;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-active {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
 <body>
-    <div class="App">
-        <header class="App-header">
-            <img src="{{ url_for('static', filename='Octocat.png') }}" class="App-logo" alt="logo" />
-            <p>
-                GitHub Codespaces <span class="heart">♥️</span> Flask
-            </p>
-            <p class="small">
-                Edit <code>templates/index.html</code> and refresh to see your changes!
-            </p>
-        </header>
-    </div>
-</body>
+    <div class="container">
+        <div id="loginScreen" class="login-screen">
+            <div class="login-form">
+                <h2>､Jamba Chatbot</h2>
+                <p style="margin-bottom: 30px; color: #6c757d;">Enter your email to start chatting</p>
+                <input type="email" id="emailInput" placeholder="Enter your email address" required>
+                <button class="btn btn-primary" onclick="login()">Start Chatting</button>
+            </div>
+        </div>
 
+        <div id="mainApp" style="display: none; width: 100%; height: 100%; flex-direction: column;">
+            <div class="app-header">
+                <h2>､Jamba</h2>
+                <div class="header-user-info" id="userInfo">user@example.com</div>
+            </div>
+
+            <div class="main-app-content">
+                <div class="panel panel-left">
+                    <div class="section">
+                        <h3>町 Conversations</h3>
+                        <button class="btn btn-primary" onclick="createNewConversation()">New Chat</button>
+                        <div class="conversations-list" id="conversationsList">
+                            <div class="empty-state">
+                                <p>No conversations yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-panel">
+                    <div class="chat-header">
+                        <div>
+                            <h3 id="chatTitle">Select a conversation</h3>
+                            <div class="mode-selector">
+                                <button class="mode-btn active" id="globalMode" onclick="switchMode('global')">Global Mode</button>
+                                <button class="mode-btn" id="ragMode" onclick="switchMode('rag')">RAG Mode</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-secondary" onclick="showRenameModal()">Rename</button>
+                            <button class="btn btn-danger" onclick="deleteCurrentConversation()">Delete</button>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="empty-state">
+                            <h3>Welcome to Jamba Chatbot!</h3>
+                            <p>Select a conversation or create a new one to start chatting.</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-input">
+                        <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)" disabled>
+                        <button id="sendButton" onclick="sendMessage()" disabled>Send</button>
+                    </div>
+                </div>
+
+                <div class="panel panel-right">
+                    <div class="section">
+                        <h3>塘 Documents</h3>
+                        <div class="file-upload">
+                            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" onchange="uploadDocument()">
+                            <label for="fileInput">Upload Document</label>
+                        </div>
+                        <div class="documents-list" id="documentsList">
+                            <div class="empty-state">
+                                <p>No documents uploaded</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="renameModal" class="modal">
+        <div class="modal-content">
+            <h3>Rename Conversation</h3>
+            <input type="text" id="newTitleInput" placeholder="Enter new title">
+            <div style="margin-top: 15px;">
+                <button class="btn btn-primary" onclick="renameConversation()">Rename</button>
+                <button class="btn btn-secondary" onclick="closeRenameModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="docRenameModal" class="modal">
+        <div class="modal-content">
+            <h3>Rename Document</h3>
+            <input type="text" id="newDocTitleInput" placeholder="Enter new title">
+            <div style="margin-top: 15px;">
+                <button class="btn btn-primary" onclick="renameDocument()">Rename</button>
+                <button class="btn btn-secondary" onclick="closeDocRenameModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentConversation = null;
+        let conversations = [];
+        let documents = [];
+        let currentMode = 'global';
+        let renameConversationId = null;
+        let renameDocumentId = null;
+
+        // API Base URL
+        const API_BASE = '/api';
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Focus on email input
+            document.getElementById('emailInput').focus();
+        });
+
+        // Login function
+        async function login() {
+            const email = document.getElementById('emailInput').value.trim();
+            if (!email) {
+                alert('Please enter your email address');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+                const user = await response.json();
+                
+                if (response.ok) {
+                    currentUser = user;
+                    document.getElementById('userInfo').textContent = email;
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('mainApp').style.display = 'flex'; // Show the main app
+                    
+                    // Load user data
+                    await loadConversations();
+                    await loadDocuments();
+                } else {
+                    alert('Error: ' + user.error);
+                }
+            } catch (error) {
+                alert('Connection error: ' + error.message);
+            }
+        }
+
+        // Load conversations
+        async function loadConversations() {
+            try {
+                const response = await fetch(`${API_BASE}/users/${currentUser.email}/conversations`);
+                const data = await response.json();
+                if (response.ok) {
+                    conversations = data;
+                    renderConversations();
+                } else {
+                    console.error('Error loading conversations:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+
+        // Render conversations
+        function renderConversations() {
+            const container = document.getElementById('conversationsList');
+            if (conversations.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No conversations yet</p></div>';
+                return;
+            }
+
+            container.innerHTML = conversations.map(conv => `
+                <div class="conversation-item ${currentConversation && currentConversation._id === conv._id ? 'active' : ''}" 
+                     onclick="loadConversation('${conv._id}')">
+                    <div class="conversation-title">${conv.title}</div>
+                    <div class="conversation-date">${new Date(conv.updated_at).toLocaleDateString()}</div>
+                </div>
+            `).join('');
+        }
+
+        // Create new conversation
+        async function createNewConversation() {
+            try {
+                const response = await fetch(`${API_BASE}/conversations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_email: currentUser.email })
+                });
+                const conversation = await response.json();
+                if (response.ok) {
+                    conversations.unshift(conversation);
+                    renderConversations();
+                    loadConversation(conversation._id);
+                } else {
+                    alert('Error creating conversation: ' + conversation.error);
+                }
+            } catch (error) {
+                alert('Error creating conversation: ' + error.message);
+            }
+        }
+
+        // Load conversation
+        async function loadConversation(conversationId) {
+            try {
+                const response = await fetch(`${API_BASE}/conversations/${conversationId}`);
+                const conversation = await response.json();
+                if (response.ok) {
+                    currentConversation = conversation;
+                    currentMode = conversation.current_mode || 'global';
+                    // Update UI
+                    document.getElementById('chatTitle').textContent = conversation.title;
+                    document.getElementById('messageInput').disabled = false;
+                    document.getElementById('sendButton').disabled = false;
+                    // Update mode buttons
+                    document.getElementById('globalMode').classList.toggle('active', currentMode === 'global');
+                    document.getElementById('ragMode').classList.toggle('active', currentMode === 'rag');
+                    // Render messages
+                    renderMessages(conversation.messages);
+                    renderConversations(); // Re-render to update active state
+                } else {
+                    alert('Error loading conversation: ' + conversation.error);
+                }
+            } catch (error) {
+                alert('Error loading conversation: ' + error.message);
+            }
+        }
+
+        // Render messages
+        function renderMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            if (!messages || messages.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>Start the conversation!</h3><p>Type a message below to begin.</p></div>';
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => `
+                <div class="message ${msg.role}">
+                    <div class="message-content">
+                        ${msg.content}
+                        <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+                    </div>
+                </div>
+            `).join('');
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Send message
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || !currentConversation) return;
+
+            // Add user message immediately
+            const userMessage = { role: 'user', content: message, timestamp: new Date().toISOString() };
+            currentConversation.messages.push(userMessage);
+            renderMessages(currentConversation.messages);
+
+            // Clear input and disable button
+            input.value = '';
+            document.getElementById('sendButton').disabled = true;
+            document.getElementById('sendButton').innerHTML = '<span class="loading"></span>';
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/${currentConversation._id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message, mode: currentMode }) // Pass mode to backend
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Add new messages to current conversation
+                    currentConversation.messages.push(...data.new_messages);
+                    renderMessages(currentConversation.messages);
+                    
+                    // Update conversations list (to update 'updated_at')
+                    const convIndex = conversations.findIndex(c => c._id === currentConversation._id);
+                    if (convIndex !== -1) {
+                        conversations[convIndex].updated_at = new Date().toISOString();
+                        conversations[convIndex].messages = currentConversation.messages; // Ensure messages are updated
+                    }
+                    await loadConversations(); // Re-sort and render
+                } else {
+                    alert('Error sending message: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error sending message: ' + error.message);
+            } finally {
+                document.getElementById('sendButton').disabled = false;
+                document.getElementById('sendButton').innerHTML = 'Send';
+            }
+        }
+
+        // Handle enter key
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Switch mode
+        async function switchMode(mode) {
+            if (!currentConversation || currentMode === mode) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/conversations/${currentConversation._id}/mode`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ mode: mode })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    currentMode = mode;
+                    document.getElementById('globalMode').classList.toggle('active', mode === 'global');
+                    document.getElementById('ragMode').classList.toggle('active', mode === 'rag');
+                    // Update the currentConversation object in memory
+                    if (currentConversation) {
+                        currentConversation.current_mode = mode;
+                        renderConversations(); // Re-render to ensure any visual state of conversation items updates
+                    }
+                } else {
+                    alert('Error switching mode: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error switching mode: ' + error.message);
+            }
+        }
+
+        // Rename conversation
+        function showRenameModal() {
+            if (!currentConversation) return;
+            renameConversationId = currentConversation._id;
+            document.getElementById('newTitleInput').value = currentConversation.title;
+            document.getElementById('renameModal').style.display = 'flex'; // Use flex for centering
+        }
+
+        function closeRenameModal() {
+            document.getElementById('renameModal').style.display = 'none';
+            renameConversationId = null;
+        }
+
+        async function renameConversation() {
+            const newTitle = document.getElementById('newTitleInput').value.trim();
+            if (!newTitle || !renameConversationId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/conversations/${renameConversationId}/rename`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ new_title: newTitle })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    currentConversation.title = newTitle;
+                    document.getElementById('chatTitle').textContent = newTitle;
+                    await loadConversations();
+                    closeRenameModal();
+                } else {
+                    alert('Error renaming conversation: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error renaming conversation: ' + error.message);
+            }
+        }
+
+        // Delete conversation
+        async function deleteCurrentConversation() {
+            if (!currentConversation) return;
+            if (!confirm('Are you sure you want to delete this conversation?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/conversations/${currentConversation._id}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    // Clear current conversation
+                    currentConversation = null;
+                    document.getElementById('chatTitle').textContent = 'Select a conversation';
+                    document.getElementById('messageInput').disabled = true;
+                    document.getElementById('sendButton').disabled = true;
+                    document.getElementById('chatMessages').innerHTML = '<div class="empty-state"><h3>Welcome to Jamba Chatbot!</h3><p>Select a conversation or create a new one to start chatting.</p></div>';
+                    // Reload conversations
+                    await loadConversations();
+                } else {
+                    alert('Error deleting conversation: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error deleting conversation: ' + error.message);
+            }
+        }
+
+        // Document management
+        async function uploadDocument() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('user_email', currentUser.email);
+
+            try {
+                const response = await fetch(`${API_BASE}/documents`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Document uploaded successfully! Processing in background...');
+                    fileInput.value = '';
+                    await loadDocuments();
+                } else {
+                    alert('Error uploading document: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error uploading document: ' + error.message);
+            }
+        }
+
+        async function loadDocuments() {
+            try {
+                const response = await fetch(`${API_BASE}/documents?user_email=${currentUser.email}`);
+                const data = await response.json();
+                if (response.ok) {
+                    documents = data;
+                    renderDocuments();
+                } else {
+                    console.error('Error loading documents:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading documents:', error);
+            }
+        }
+
+        function renderDocuments() {
+            const container = document.getElementById('documentsList');
+            if (documents.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No documents uploaded</p></div>';
+                return;
+            }
+
+            container.innerHTML = documents.map(doc => `
+                <div class="document-item ${doc.is_active ? 'active' : ''} ${doc.processing_status === 'processing' ? 'processing' : ''}">
+                    <div class="document-title">${doc.title}</div>
+                    <div class="document-status">
+                        <span class="status-badge status-${doc.processing_status}">${doc.processing_status}</span>
+                        ${doc.is_active ? '<span class="status-badge status-active">Active</span>' : ''}
+                    </div>
+                    <div class="document-actions">
+                        ${doc.processing_status === 'completed' ? `
+                            <button class="btn ${doc.is_active ? 'btn-warning' : 'btn-success'}" 
+                                    onclick="${doc.is_active ? 'inactivateDocument' : 'activateDocument'}('${doc._id}')">
+                                ${doc.is_active ? 'Deactivate' : 'Activate'}
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-secondary" onclick="showDocRenameModal('${doc._id}', '${doc.title}')">Rename</button>
+                        <button class="btn btn-danger" onclick="deleteDocument('${doc._id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function activateDocument(docId) {
+            try {
+                const response = await fetch(`${API_BASE}/documents/${docId}/activate`, {
+                    method: 'PUT'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    await loadDocuments();
+                } else {
+                    alert('Error activating document: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error activating document: ' + error.message);
+            }
+        }
+
+        async function inactivateDocument(docId) {
+            try {
+                const response = await fetch(`${API_BASE}/documents/${docId}/inactivate`, {
+                    method: 'PUT'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    await loadDocuments();
+                } else {
+                    alert('Error inactivating document: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error inactivating document: ' + error.message);
+            }
+        }
+
+        function showDocRenameModal(docId, currentTitle) {
+            renameDocumentId = docId;
+            document.getElementById('newDocTitleInput').value = currentTitle;
+            document.getElementById('docRenameModal').style.display = 'flex'; // Use flex for centering
+        }
+
+        function closeDocRenameModal() {
+            document.getElementById('docRenameModal').style.display = 'none';
+            renameDocumentId = null;
+        }
+
+        async function renameDocument() {
+            const newTitle = document.getElementById('newDocTitleInput').value.trim();
+            if (!newTitle || !renameDocumentId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/documents/${renameDocumentId}/rename`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ new_title: newTitle })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    await loadDocuments();
+                    closeDocRenameModal();
+                } else {
+                    alert('Error renaming document: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error renaming document: ' + error.message);
+            }
+        }
+
+        async function deleteDocument(docId) {
+            if (!confirm('Are you sure you want to delete this document?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/documents/${docId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    await loadDocuments();
+                } else {
+                    alert('Error deleting document: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error deleting document: ' + error.message);
+            }
+        }
+    </script>
+</body>
 </html>
