@@ -1,17 +1,12 @@
-ipywidgets==8.1.2
-matplotlib==3.8.4
-pandas==2.2.2
-torch==2.6.0
-torchvision==0.21.0
-tqdm==4.66.4
-Flask==3.0.3
-flask-cors==4.0.1
-pymongo==4.7.3
+Flask
+pymongo
 ai21
-sentence-transformers==2.7.0
-python-dotenv==1.0.1
-PyMuPDF==1.24.1 # For 'fitz' to read PDFs
-python-docx==1.1.2 # For 'docx' to read Word documents
-numpy==1.26.4 # Often a dependency of sentence-transformers and other numerical libraries
-PyPDF2==3.0.1 # For PDF reading capabilities
-scikit-learn
+sentence-transformers
+torch
+transformers
+PyPDF2
+pypdf
+python-docx
+langchain-text-splitters
+langchain-community
+einops

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Jamba Chatbot Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+    {% if csrf_token %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    {% endif %}
+    <style>
+        /* Custom styles for selected state, not easily done with only Tailwind's default utility classes */
+        .chat-item.selected {
+            background-color: #DBEAFE; /* Tailwind bg-blue-100 */
+            border-color: #3B82F6;    /* Tailwind border-blue-500 */
+        }
+        .chat-item:hover {
+            background-color: #F3F4F6; /* Tailwind bg-gray-100 */
+        }
+        /* Styles for user and assistant messages for visual differentiation */
+        .user-message {
+            text-align: right;
+            color: #1e40af; /* Tailwind text-blue-800 */
+        }
+        .assistant-message {
+            text-align: left;
+            background-color: #e5e7eb; /* Tailwind bg-gray-200 */
+            color: #1f2937; /* Tailwind text-gray-800 */
+            border-radius: 0.5rem; /* Tailwind rounded-lg */
+            padding: 0.5rem; /* Tailwind p-2 */
+            display: inline-block;
+            max-width: 32rem; /* Tailwind max-w-lg */
+        }
+        /* Recording indicator animation */
+        .recording-indicator {
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="flex h-screen bg-gray-100">
+    <div id="app-data"
+     data-chat-id="{{ current_chat.chat_id if current_chat else '' }}"
+     data-chat-name="{{ current_chat.chat_name if current_chat else '' }}"
+     data-has-current-chat="{{ 'true' if current_chat else 'false' }}"
+     style="display: none;"></div>
+
+    <div class="w-1/4 bg-white p-4 flex flex-col border-r shadow-md">
+        <div class="flex items-center mb-4 pb-4 border-b">
+            <img src="https://www.google.com/s2/favicons?domain=ai21.com" alt="Jamba Icon" class="w-6 h-6 mr-2">
+            <h2 class="text-xl font-bold text-gray-800">Jamba Chatbot</h2>
+        </div>
+
+        <div class="user-info text-gray-600 text-sm mb-4">
+            <p class="font-semibold">{{ session.get('email', 'user@example.com') | e }}</p>
+            <a href="/logout" class="text-blue-500 hover:underline text-xs">Logout</a>
+        </div>
+
+        <h3 class="text-lg font-semibold mb-3">Conversations</h3>
+        <div id="chat-list" class="flex-1 space-y-2 overflow-y-auto mb-4">
+            {% if chats %}
+                {% for chat in chats %}
+                <div class="chat-item p-3 border rounded-lg cursor-pointer flex flex-col {% if current_chat and current_chat.chat_id == chat.chat_id %}selected{% else %}bg-gray-50{% endif %}"
+                     id="chat-item-{{ chat.chat_id | e }}" onclick="resumeChat('{{ chat.chat_id | e }}')">
+                    <strong class="text-gray-800">{{ chat.chat_name | e }}</strong>
+                    <div class="flex justify-end space-x-2 mt-2">
+                        <button type="button" class="rename-btn bg-yellow-500 text-white px-3 py-1 text-sm rounded hover:bg-yellow-600 transition duration-200"
+                                onclick="event.stopPropagation(); renameChat('{{ chat.chat_id | e }}')" aria-label="Rename chat {{ chat.chat_name | e }}">Rename</button>
+                        <button type="button" class="delete-btn bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600 transition duration-200"
+                                onclick="event.stopPropagation(); deleteChat('{{ chat.chat_id | e }}')" aria-label="Delete chat {{ chat.chat_name | e }}">Delete</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-500 text-sm">No conversations yet. Start a new one!</p>
+            {% endif %}
+        </div>
+        <button id="new-chat-button" onclick="startNewChat()" class="mt-auto bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition duration-200">+ New Chat</button>
+    </div>
+
+    <div class="flex-1 flex flex-col bg-gray-50">
+        <div class="top-controls p-4 bg-white border-b flex justify-between items-center shadow-sm">
+            <h2 class="text-xl font-bold text-gray-800">
+                {% if current_chat %}
+                    {{ current_chat.chat_name | e }}
+                {% else %}
+                    No Chat Selected
+                {% endif %}
+            </h2>
+            <div class="flex space-x-2">
+                <button type="button" class="rename-btn bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition duration-200"
+                        onclick="renameChat('{{ current_chat.chat_id | e }}')" {% if not current_chat %}disabled{% endif %} aria-label="Rename current chat">Rename</button>
+                <button type="button" class="delete-btn bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-200"
+                        onclick="deleteChat('{{ current_chat.chat_id | e }}')" {% if not current_chat %}disabled{% endif %} aria-label="Delete current chat">Delete</button>
+            </div>
+        </div>
+
+        <div class="chat-mode-buttons p-3 bg-gray-100 border-b flex justify-center space-x-4">
+            <button type="button" id="general-mode-btn" onclick="switchChatMode('{{ current_chat.chat_id | e }}', 'general')"
+                class="px-4 py-2 rounded-lg transition duration-200 {% if current_chat and current_chat.mode == 'general' %}bg-blue-600 text-white{% else %}bg-gray-300 text-gray-800 hover:bg-gray-400{% endif %}"
+                {% if not current_chat %}disabled{% endif %} aria-label="Switch to Global Mode">Global Mode</button>
+            <button type="button" id="document-mode-btn" onclick="switchChatMode('{{ current_chat.chat_id | e }}', 'document')"
+                class="px-4 py-2 rounded-lg transition duration-200 {% if current_chat and current_chat.mode == 'document' %}bg-blue-600 text-white{% else %}bg-gray-300 text-gray-800 hover:bg-gray-400{% endif %}"
+                {% if not current_chat %}disabled{% endif %} aria-label="Switch to RAG Mode">RAG Mode</button>
+        </div>
+
+        <div id="chat-history" class="flex-1 p-4 overflow-y-auto space-y-4" role="log" aria-live="polite" aria-relevant="additions text">
+            {% if current_chat %}
+                {% for msg in current_chat.messages %}
+                <div class="{{ 'user-message' if msg.role == 'user' else 'assistant-message' }}">
+                    <strong>{{ msg.role | title }}:</strong> {{ msg.content | e }}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-400 text-center py-10">Start a new chat or select an existing one to begin your conversation.</p>
+            {% endif %}
+        </div>
+
+        <div class="p-4 bg-white flex space-x-3 border-t shadow-inner">
+            <label for="chat-message" class="sr-only">Type your message</label>
+            <textarea id="chat-message" rows="1" placeholder="Type your message..."
+                      class="flex-1 border border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      {% if not current_chat %}disabled{% endif %}></textarea>
+            <button onclick="sendMessage()"
+                    class="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition duration-200"
+                    {% if not current_chat %}disabled{% endif %}>Send</button>
+            <button type="button" class="microphone-btn bg-green-500 text-white px-5 py-3 rounded-lg hover:bg-green-600 transition duration-200"
+                    onclick="startSpeechInput()" {% if not current_chat %}disabled{% endif %} aria-label="Record speech input">🎤</button>
+        </div>
+    </div>
+
+    <div class="w-1/4 bg-white p-4 flex flex-col border-l shadow-md">
+        <h3 class="text-lg font-semibold mb-3">Documents</h3>
+        <form id="upload-form" method="post" action="/upload_document" enctype="multipart/form-data" class="mb-4 pb-4 border-b">
+            <label for="document-upload" class="sr-only">Upload Document</label>
+            <input type="file" id="document-upload" name="file" accept=".pdf,.docx,.txt" required
+                   class="mb-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                   {% if not current_chat %}disabled{% endif %}>
+            <button type="submit" class="bg-green-600 text-white p-3 rounded-lg w-full hover:bg-green-700 transition duration-200"
+                    {% if not current_chat %}disabled{% endif %}>Upload Document</button>
+        </form>
+
+        <div id="document-list" class="flex-1 space-y-2 overflow-y-auto">
+            {% if documents %}
+                {% for doc in documents %}
+                <div class="doc-item p-3 bg-gray-50 border rounded-lg flex flex-col" id="doc-item-{{ doc.doc_id | e }}">
+                    <strong class="text-gray-800">{{ doc.current_name | e }}</strong>
+                    <div class="flex justify-end space-x-2 mt-2">
+                        <button type="button" class="rename-btn bg-yellow-500 text-white px-3 py-1 text-sm rounded hover:bg-yellow-600 transition duration-200"
+                                onclick="renameDocument('{{ doc.doc_id | e }}')" aria-label="Rename document {{ doc.current_name | e }}">Rename</button>
+                        <button type="button" class="delete-btn bg-red-500 text-white px-3 py-1 text-sm rounded hover:bg-red-600 transition duration-200"
+                                onclick="deleteDocument('{{ doc.doc_id | e }}')" aria-label="Delete document {{ doc.current_name | e }}">Delete</button>
+                    </div>
+                    <label class="inline-flex items-center text-gray-700 text-sm mt-3">
+                        <input type="checkbox" class="form-checkbox h-5 w-5 text-blue-600 rounded" onchange="toggleDocumentSelection('{{ doc.doc_id | e }}', this.checked)"
+                            {% if current_chat and doc.doc_id in current_chat.selected_documents %}checked{% endif %}
+                            {% if not current_chat %}disabled{% endif %}>
+                        <span class="ml-2">Selected for chat context</span>
+                    </label>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-500 text-sm">No documents uploaded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>
