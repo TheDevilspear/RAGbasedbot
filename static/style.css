@@ -1,0 +1,111 @@
+/* base.css or style.css content */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Ensure full height and prevent scrollbars from transitions */
+    height: 100vh;
+    overflow: hidden;
+}
+
+code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+        monospace;
+}
+
+/* Custom styles for selected state, not easily done with only Tailwind's default utility classes */
+.chat-item.selected {
+    background-color: #DBEAFE; /* Tailwind bg-blue-100 */
+    border-color: #3B82F6;    /* Tailwind border-blue-500 */
+}
+.chat-item:hover {
+    background-color: #F3F4F6; /* Tailwind bg-gray-100 */
+}
+/* Styles for user and assistant messages for visual differentiation */
+.user-message {
+    text-align: right;
+    color: #1e40af; /* Tailwind text-blue-800 */
+}
+.assistant-message {
+    text-align: left;
+    background-color: #e5e7eb; /* Tailwind bg-gray-200 */
+    color: #1f2937; /* Tailwind text-gray-800 */
+    border-radius: 0.5rem; /* Tailwind rounded-lg */
+    padding: 0.5rem; /* Tailwind p-2 */
+    display: inline-block;
+    max-width: 32rem; /* Tailwind max-w-lg */
+}
+/* Recording indicator animation */
+.recording-indicator {
+    animation: pulse 1s infinite alternate;
+}
+@keyframes pulse {
+    from { opacity: 1; }
+    to { opacity: 0.5; }
+}
+
+/* --- NEW CUSTOM CSS FOR SLIDING PANELS --- */
+
+/* Base styles for the panels and their transitions */
+.panel {
+    flex-shrink: 0; /* Prevents panels from shrinking below their width */
+    transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+    /* Important for smooth width collapse: hides overflowing content */
+    overflow: hidden;
+}
+
+.panel-left.hidden-panel-left {
+    width: 0;
+    /* If you prefer sliding off-screen rather than collapsing width, use: */
+    /* transform: translateX(-100%); */
+    /* width: 25%; (or whatever default width it has) */
+}
+
+.panel-right.hidden-panel-right {
+    width: 0;
+    /* If you prefer sliding off-screen rather than collapsing width, use: */
+    /* transform: translateX(100%); */
+    /* width: 25%; */
+}
+
+/* Styles for the toggle buttons */
+.toggle-panel-btn {
+    position: absolute;
+    top: 50%; /* Vertically center */
+    transform: translateY(-50%); /* Adjust for perfect centering */
+    background-color: #4B5563; /* bg-gray-600 */
+    color: white;
+    border: none;
+    padding: 8px 10px;
+    cursor: pointer;
+    z-index: 100; /* Ensure button is above other content */
+    border-radius: 0.25rem; /* rounded-md */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 1.25rem; /* text-xl */
+    line-height: 1;
+}
+
+/* Positioning for left panel toggle button */
+#toggle-left-panel-btn {
+    left: 25%; /* Initial position, just outside the left panel */
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+/* Adjust position when left panel is hidden */
+.panel-left.hidden-panel-left + #toggle-left-panel-btn {
+    left: 0; /* Moves button to the very left edge */
+}
+
+/* Positioning for right panel toggle button */
+#toggle-right-panel-btn {
+    right: 25%; /* Initial position, just outside the right panel */
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+/* Adjust position when right panel is hidden */
+.panel-right.hidden-panel-right + #toggle-right-panel-btn {
+    right: 0; /* Moves button to the very right edge */
+}
