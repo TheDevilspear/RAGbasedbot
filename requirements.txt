@@ -16,4 +16,3 @@ Pillow
 pytesseract
 pdf2image
 PyMuPDF
-gunicorn
