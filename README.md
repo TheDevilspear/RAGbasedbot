@@ -64,8 +64,8 @@ This section outlines the primary API endpoints exposed by the Flask backend.
 * `POST /tts`: Converts text to speech.
     * **Request Body**: `{ "text": "..." }`
     * **Response**: `audio/mpeg` file stream.
-* `GET /get_documents`: (Assumed, for listing user's uploaded documents)
-* `GET /get_chats`: (Assumed, for listing user's chat sessions)
+* `GET /get_documents`: (for listing user's uploaded documents)
+* `GET /get_chats`: (for listing user's chat sessions)
 
 ---
 
