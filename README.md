@@ -37,60 +37,7 @@ This project implements a **Retrieval-Augmented Generation (RAG)** chatbot with 
 * **Frontend**: HTML,CSS,JS
 
 ---
-
-## Getting Started
-
-Follow these instructions to set up and run the project locally.
-
-### Prerequisites
-
-* Python 3.8+
-* MongoDB instance (local or cloud-hosted)
-* AI21 API Key
-* (If applicable, any specific model weights or external dependencies for STT/Embeddings)
-
-### Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/TheDevilspear/RAGbasedbot.git]
-    cd RAGbasedbot
-    ```
-
-2.  **Create a virtual environment (recommended):**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: `venv\Scripts\activate`
-    ```
-
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-    *(You'll need to create a `requirements.txt` file by running `pip freeze > requirements.txt` after installing all necessary libraries like Flask, pymongo, ai21, transformers, gTTS, langchain, python-dotenv, python-multipart, etc.)*
-
-4.  **Set up Environment Variables:**
-    Create a `.env` file in the root directory of your project and add the following:
-    ```
-    MONGO_URI="your_mongodb_connection_string"
-    AI21_API_KEY="your_ai21_api_key"
-    UPLOAD_FOLDER="./uploads" # Ensure this directory exists or create it
-    SECRET_KEY="a_very_secret_key_for_flask_sessions"
-    # Add any other API keys or configuration settings
-    ```
-
-### Running the Application
-
-1.  **Start MongoDB:**
-    Ensure your MongoDB instance is running and accessible via the `MONGO_URI` provided in your `.env` file.
-
-2.  **Run the Flask application:**
-    ```bash
-    python app.py  # Or whatever your main Flask file is named
-    ```
-    The application will typically run on `http://127.0.0.1:5000`.
-
----
+   
 
 ## API Endpoints
 
@@ -122,4 +69,4 @@ This section outlines the primary API endpoints exposed by the Flask backend.
 
 ---
 
-## Project Structure (Conceptual)
+
