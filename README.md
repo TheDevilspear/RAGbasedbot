@@ -1,13 +1,126 @@
-# GitHub Codespaces ♥️ Flask
+# Retrieval-Augmented Generation (RAG) Chatbot
 
-Welcome to your shiny new Codespace running Flask! We've got everything fired up and running for you to explore Flask.
+---
 
-You've got a blank canvas to work on from a git perspective as well. There's a single initial commit with the what you're seeing right now - where you go from here is up to you!
+## Project Overview
 
-Everything you do here is contained within this one codespace. There is no repository on GitHub yet. If and when you’re ready you can click "Publish Branch" and we’ll create your repository and push up your project. If you were just exploring then and have no further need for this code then you can simply delete your codespace and it's gone forever.
+This project implements a **Retrieval-Augmented Generation (RAG)** chatbot with document management capabilities and integrated speech-to-text (STT) and text-to-speech (TTS) functionalities. It allows users to upload their own documents, which are then processed, chunked, and embedded to serve as a knowledge base for the chatbot. The AI model leverages this context to provide accurate and relevant answers, minimizing hallucinations.
 
-To run this application:
+---
 
-```
-flask --debug run
-```
+## Features
+
+* **RAG-powered Chatbot**: Answers user queries by retrieving information directly from uploaded documents.
+* **Document Upload**: Supports various document types (PDF, TXT, DOCX, DOC, JPG, JPEG, PNG) for building a custom knowledge base.
+* **Automatic Chunking & Embedding**: Uploaded documents are automatically broken down into smaller chunks and converted into vector embeddings for efficient similarity search.
+* **Document Management**:
+    * Rename uploaded documents.
+    * Delete documents and their associated data.
+    * Select/deselect specific documents for a given chat session to control the RAG context.
+* **Conversational History**: Maintains chat history for ongoing conversations.
+* **Auto-Generated Chat Names**: Automatically names new chat sessions based on the initial conversation.
+* **Speech-to-Text (STT)**: Transcribes spoken audio input into text for chat queries.
+* **Text-to-Speech (TTS)**: Converts the chatbot's text responses into natural-sounding speech.
+* **User Authentication**: (Implied by `session.get("email")`) Likely includes a user login system to manage individual user documents and chats.
+
+---
+
+## Technologies Used
+
+* **Backend**: Flask (Python Web Framework)
+* **Database**: MongoDB (for storing chat history, document metadata, and document chunks)
+* **Vector Embeddings**: (Specify your embedding model/service here, e.g., AI21 Embeddings, OpenAI Embeddings, Sentence Transformers)
+* **Large Language Model (LLM)**: AI21 Jamba-Mini (for generating chat responses)
+* **Speech-to-Text**: Hugging Face Transformers `pipeline` (e.g., based on OpenAI Whisper)
+* **Text-to-Speech**: gTTS (Google Text-to-Speech)
+* **Document Processing**: LangChain (for text extraction and chunking from various document types)
+* **Frontend**: (Mention your frontend framework/library if applicable, e.g., React, Vue, HTML/CSS/JS)
+* **Deployment**: (If deployed, mention platform like AWS, Azure, Render, Heroku)
+
+---
+
+## Getting Started
+
+Follow these instructions to set up and run the project locally.
+
+### Prerequisites
+
+* Python 3.8+
+* MongoDB instance (local or cloud-hosted)
+* AI21 API Key
+* (If applicable, any specific model weights or external dependencies for STT/Embeddings)
+
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
+    cd your-repo-name
+    ```
+
+2.  **Create a virtual environment (recommended):**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: `venv\Scripts\activate`
+    ```
+
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+    *(You'll need to create a `requirements.txt` file by running `pip freeze > requirements.txt` after installing all necessary libraries like Flask, pymongo, ai21, transformers, gTTS, langchain, python-dotenv, python-multipart, etc.)*
+
+4.  **Set up Environment Variables:**
+    Create a `.env` file in the root directory of your project and add the following:
+    ```
+    MONGO_URI="your_mongodb_connection_string"
+    AI21_API_KEY="your_ai21_api_key"
+    UPLOAD_FOLDER="./uploads" # Ensure this directory exists or create it
+    SECRET_KEY="a_very_secret_key_for_flask_sessions"
+    # Add any other API keys or configuration settings
+    ```
+
+### Running the Application
+
+1.  **Start MongoDB:**
+    Ensure your MongoDB instance is running and accessible via the `MONGO_URI` provided in your `.env` file.
+
+2.  **Run the Flask application:**
+    ```bash
+    python app.py  # Or whatever your main Flask file is named
+    ```
+    The application will typically run on `http://127.0.0.1:5000`.
+
+---
+
+## API Endpoints
+
+This section outlines the primary API endpoints exposed by the Flask backend.
+
+* `POST /chat`: Main endpoint for sending user messages and getting chatbot responses.
+    * **Request Body**: `{ "chat_id": "...", "user_message": "...", "history": [], "selected_doc_ids": [] }`
+    * **Response**: `{ "reply": "...", "chat_id": "..." }`
+* `POST /upload_document`: Uploads a document, processes it, and stores its chunks and metadata.
+    * **Request Body**: `multipart/form-data` with `file` and `chat_id`.
+    * **Response**: `{ "status": "uploaded", "doc_id": "...", "filename": "...", "chunks_count": ..., "failed_embeddings": ... }`
+* `POST /rename_document`: Renames an uploaded document.
+    * **Request Body**: `{ "doc_id": "...", "new_name": "..." }`
+    * **Response**: `{ "status": "renamed" }`
+* `POST /delete_document`: Deletes a document and its associated data.
+    * **Request Body**: `{ "doc_id": "..." }`
+    * **Response**: `{ "status": "deleted" }`
+* `POST /toggle_document`: Adds or removes a document from the current chat's selected documents.
+    * **Request Body**: `{ "chat_id": "...", "doc_id": "...", "action": "select" | "deselect" }`
+    * **Response**: `{ "status": "updated" }`
+* `POST /speech_input`: Accepts audio input for transcription.
+    * **Request Body**: `multipart/form-data` with `audio` file.
+    * **Response**: `{ "transcribed_text": "..." }`
+* `POST /tts`: Converts text to speech.
+    * **Request Body**: `{ "text": "..." }`
+    * **Response**: `audio/mpeg` file stream.
+* `GET /get_documents`: (Assumed, for listing user's uploaded documents)
+* `GET /get_chats`: (Assumed, for listing user's chat sessions)
+
+---
+
+## Project Structure (Conceptual)
